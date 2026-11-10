@@ -743,3 +743,19 @@ func tempFileNamesFor(t *testing.T, names ...string) func() int {
 	}
 	return func() int { return used }
 }
+
+
+// TestWriteFileAtomicRemovesLeftoversOfEarlierRuns makes sure that a run of
+// the generator cleans up any leftover temporary files of an earlier run
+// that was killed or crashed.
+func TestWriteFileAtomicRemovesLeftoversOfEarlierRuns(t *testing.T) {
+	dir := t.TempDir()
+	out := filepath.Join(dir, "README.md")
+
+	leftover := filepath.Join(dir, ".awesomegen-crashed.tmp")
+	require.NoError(t, os.WriteFile(leftover, []byte("garbage\n"), 0o600))
+
+	require.NoError(t, writeFileAtomic(dir, out, []byte("# README\n")))
+	require.FileExists(t, out)
+	require.NoFileExists(t, leftover, "the leftover of an earlier run is cleaned up")
+}

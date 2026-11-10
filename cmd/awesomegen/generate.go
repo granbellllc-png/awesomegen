@@ -428,6 +428,8 @@ func writeFileAtomic(root, path string, data []byte) error {
 		return fmt.Errorf("create output directory %s: %w", dir, err)
 	}
 
+	removeLeftovers(dir)
+
 	// The mode of the file that is replaced is kept: a README that only its
 	// owner may read does not become readable by everybody. A file that does
 	// not exist yet is written with the mode the umask of the user produces,
@@ -650,4 +652,17 @@ func checkPathComponents(root, rel string) error {
 		}
 	}
 	return nil
+}
+
+
+// removeLeftovers removes any leftover temporary files of an earlier run
+// that crashed or was killed before it could clean up after itself.
+func removeLeftovers(dir string) {
+	matches, err := filepath.Glob(filepath.Join(dir, ".awesomegen-*.tmp"))
+	if err != nil {
+		return
+	}
+	for _, m := range matches {
+		_ = os.Remove(m)
+	}
 }
